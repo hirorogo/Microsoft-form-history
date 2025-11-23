@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import "./App.css";
 import { LocalAnswers, LocalForms } from "@/utils/types";
+import "./App.css";
 
 // 回答ごとに表示するための整形済みデータ
 interface DisplayAnswer {
@@ -29,6 +29,13 @@ const App = () => {
   const formatDate = (date: string) => {
     const dateObj = new Date(date);
     return dateObj.toLocaleDateString() + " " + dateObj.toLocaleTimeString();
+  };
+
+  const deleteAnswer = (formId: string, fbzx: string) => {
+    /*chrome.storage.local.remove(["answers", formId, fbzx]);
+    setDisplayAnswers(
+      displayAnswers.filter((v) => v.formId !== formId || v.fbzx !== fbzx)
+    );*/
   };
 
   useEffect(() => {
@@ -90,7 +97,7 @@ const App = () => {
         <a onClick={deleteFormsAndAnswers}>回答履歴を削除</a>
       </header>
       <div id="forms">
-        {displayAnswers.map(({ title, date, fbzx, items }) => (
+        {displayAnswers.map(({ formId, fbzx, date, title, items }) => (
           <details key={fbzx} className="form">
             <summary>
               {title}（{formatDate(date)}）
@@ -104,6 +111,17 @@ const App = () => {
                 </div>
               ))}
             </div>
+            <footer>
+              <a
+                href={`https://docs.google.com/forms/d/e/${formId}/viewform`}
+                target="_blank"
+              >
+                フォームを開く
+              </a>
+              <a className="red" onClick={() => deleteAnswer(formId, fbzx)}>
+                フォームを削除
+              </a>
+            </footer>
           </details>
         ))}
       </div>

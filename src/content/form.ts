@@ -48,4 +48,5 @@ window.addEventListener("message", async (event) => {
   const localForms: Record<string, Form> = localFormsData ?? {};
   localForms[form.path] = form;
   chrome.storage.local.set({ forms: localForms });
+  console.log("[google-form-save] Form saved", form);
 });
