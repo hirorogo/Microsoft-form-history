@@ -9,7 +9,7 @@ export interface Form {
 
 export interface Item {
   id: string;
-  answerId?: string;
+  answerId?: number;
   headline: string;
   label: string;
   options: string[];
@@ -19,4 +19,9 @@ export interface Item {
 export type LocalAnswers = Record<string, FormAnswers>;
 
 // answerId をキーにした回答データ
-export type FormAnswers = Record<string, string[]>;
+export interface FormAnswers {
+  formId: string;
+  fbzx: string;
+  date: string;
+  answers: Record<string, string[]>;
+}

@@ -6,19 +6,14 @@ import { getFormId } from "@/utils/utils";
  * @returns 回答の辞書
  */
 const saveAnswers = async () => {
-  const formAnswers: FormAnswers = {};
+  const answers: Record<string, string[]> = {};
 
-  // formId を取得
-  const formId = getFormId(window.location.pathname);
-
-  // fbzx を取得
-  let fbzx = "";
-  const fbzxInput = document.querySelector("[name='fbzx']");
-  if (fbzxInput instanceof HTMLInputElement) {
-    fbzx = fbzxInput.value;
-  }
-
-  const key = `${formId}:${fbzx}`;
+  const addAnswer = (id: string, value: string) => {
+    if (!answers[id]) {
+      answers[id] = [];
+    }
+    answers[id].push(value);
+  };
 
   // 前ページまでの回答は partialResponse に存在
   const input = document.querySelector("[name='partialResponse']");
@@ -27,9 +22,7 @@ const saveAnswers = async () => {
     if (value) {
       for (const item of value) {
         if (item && item.length === 4) {
-          const id = item[1];
-          const value = item[2];
-          formAnswers[id] = value;
+          addAnswer(item[1], item[2]);
         }
       }
     }
@@ -41,18 +34,32 @@ const saveAnswers = async () => {
     if (input instanceof HTMLInputElement) {
       if (input.name.startsWith("entry.")) {
         const id = input.name.split(".")[1];
-        if (!formAnswers[id]) {
-          formAnswers[id] = [];
-        }
-        formAnswers[id].push(input.value);
+        addAnswer(id, input.value);
       }
     }
   }
+
+  const formId = getFormId(window.location.pathname);
+
+  // fbzx を取得
+  let fbzx = "";
+  const fbzxInput = document.querySelector("[name='fbzx']");
+  if (fbzxInput instanceof HTMLInputElement) {
+    fbzx = fbzxInput.value;
+  }
+
+  const formAnswers: FormAnswers = {
+    formId,
+    fbzx,
+    date: new Date().toISOString(),
+    answers,
+  };
 
   // ローカルに保存
   const localAnswersData = (await chrome.storage.local.get("answers"))
     .answers as LocalAnswers;
   const localAnswers: LocalAnswers = localAnswersData ?? {};
+  const key = `${formId}:${fbzx}`;
   localAnswers[key] = formAnswers;
   chrome.storage.local.set({ answers: localAnswers });
 };

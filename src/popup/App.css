@@ -1,0 +1,83 @@
+body {
+  width: 400px;
+  font-family: sans-serif;
+  color: #333;
+}
+
+#container {
+  color: #333;
+  padding: 6px 8px;
+}
+
+#header {
+  margin-bottom: 16px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 8px;
+}
+
+h1 {
+  font-size: 16px;
+  margin: 0;
+}
+
+#header a {
+  color: #c00;
+  cursor: pointer;
+}
+
+#header a:hover {
+  text-decoration: underline;
+}
+
+#forms {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+
+.form[open] summary {
+  border-bottom: 1px solid #eee;
+}
+
+.form summary {
+  font-weight: bold;
+  padding: 8px 12px;
+  cursor: pointer;
+  outline: none;
+}
+
+.qa-list {
+  line-height: 1.4;
+  padding: 12px 12px 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.qa-item {
+  font-size: 12px;
+  padding-left: 8px;
+  border-left: 2px solid hsl(262, 45%, 80%);
+}
+
+.question {
+  font-weight: bold;
+  margin: 0;
+}
+
+.label {
+  font-size: 10px;
+  font-style: italic;
+  margin: 0;
+}
+
+.answer {
+  margin: 0;
+  font-weight: 500;
+  color: #000;
+}

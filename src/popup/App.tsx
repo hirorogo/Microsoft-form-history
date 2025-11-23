@@ -1,34 +1,114 @@
 import { useEffect, useState } from "react";
 import "./App.css";
-import { LocalForms } from "@/utils/types";
+import { LocalAnswers, LocalForms } from "@/utils/types";
 
-export default function App() {
-  const [forms, setForms] = useState<LocalForms>({});
-  const [openingId, setOpeningId] = useState(null);
+// 回答ごとに表示するための整形済みデータ
+interface DisplayAnswer {
+  formId: string;
+  fbzx: string;
+  date: string;
+  title: string;
+  items: DisplayItem[];
+}
+
+interface DisplayItem {
+  headline: string;
+  label: string;
+  answers?: string[];
+}
+
+const App = () => {
+  const [displayAnswers, setDisplayAnswers] = useState<DisplayAnswer[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const deleteFormsAndAnswers = () => {
+    chrome.storage.local.remove(["forms", "answers"]);
+    setDisplayAnswers([]);
+  };
+
+  const formatDate = (date: string) => {
+    const dateObj = new Date(date);
+    return dateObj.toLocaleDateString() + " " + dateObj.toLocaleTimeString();
+  };
 
   useEffect(() => {
     (async () => {
-      const formsData = await chrome.storage.local.get("forms");
-      if (formsData.forms) {
-        setForms(formsData.forms as any);
-      }
+      const data = await chrome.storage.local.get(["forms", "answers"]);
+      const forms = (data.forms as LocalForms) ?? {};
+      const localAnswers = (data.answers as LocalAnswers) ?? {};
+
+      const displayAnswers: DisplayAnswer[] = Object.values(localAnswers)
+        .map(({ formId, fbzx, date, answers }) => {
+          const form = forms[formId];
+          if (!form) {
+            return null;
+          }
+
+          const items = form.items.map<DisplayItem>((item) => {
+            if (item.answerId && item.answerId in answers) {
+              return {
+                headline: item.headline,
+                label: item.label,
+                answers: answers[item.answerId],
+              };
+            } else {
+              return {
+                headline: item.headline,
+                label: item.label,
+              };
+            }
+          });
+
+          return {
+            formId,
+            fbzx,
+            date: date,
+            title: form.title,
+            items,
+          };
+        })
+        .filter((v): v is DisplayAnswer => v !== null)
+        .reverse(); // 新しい順に表示
+
+      setDisplayAnswers(displayAnswers);
+      setLoading(false);
     })();
   }, []);
 
+  if (loading) {
+    return <p>読み込み中...</p>;
+  }
+
+  if (displayAnswers.length === 0) {
+    return <p>保存された回答はありません</p>;
+  }
+
   return (
-    <div>
-      <ul>
-        {Object.values(forms).map((form) => (
-          <li key={form.path}>
-            <h2>{form.title}</h2>
-            <ul>
-              {form.items.map((item) => (
-                <li key={item.id}>{item.headline}</li>
+    <div id="container">
+      <header id="header">
+        <h1>保存された回答履歴</h1>
+        <a onClick={deleteFormsAndAnswers}>回答履歴を削除</a>
+      </header>
+      <div id="forms">
+        {displayAnswers.map(({ title, date, fbzx, items }) => (
+          <details key={fbzx} className="form">
+            <summary>
+              {title}（{formatDate(date)}）
+            </summary>
+            <div className="qa-list">
+              {items.map(({ headline, label, answers }, i) => (
+                <div key={i} className="qa-item">
+                  <p className="question">{headline}</p>
+                  {label && <p className="label">{label}</p>}
+                  {answers && <p className="answer">{answers.join("，")}</p>}
+                </div>
               ))}
-            </ul>
-          </li>
+            </div>
+          </details>
         ))}
-      </ul>
+      </div>
     </div>
   );
-}
+};
+
+export default App;
