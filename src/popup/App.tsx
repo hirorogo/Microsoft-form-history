@@ -94,7 +94,9 @@ const App = () => {
     <div id="container">
       <header id="header">
         <h1>保存された回答履歴</h1>
-        <a onClick={deleteFormsAndAnswers}>回答履歴を削除</a>
+        <a onClick={deleteFormsAndAnswers} role="button">
+          回答履歴を削除
+        </a>
       </header>
       <div id="forms">
         {displayAnswers.map(({ formId, fbzx, date, title, items }) => (
@@ -115,10 +117,15 @@ const App = () => {
               <a
                 href={`https://docs.google.com/forms/d/e/${formId}/viewform`}
                 target="_blank"
+                role="button"
               >
                 フォームを開く
               </a>
-              <a className="red" onClick={() => deleteAnswer(formId, fbzx)}>
+              <a
+                className="red"
+                onClick={() => deleteAnswer(formId, fbzx)}
+                role="button"
+              >
                 フォームを削除
               </a>
             </footer>

@@ -12,7 +12,11 @@ import { getFormId } from "@/utils/utils";
 
 // web-accessible-resources.js からデータを取得
 window.addEventListener("message", async (event) => {
-  if (event.source !== window || event.data?.source !== "google-form-save") {
+  if (
+    event.source !== window ||
+    event.origin !== "https://docs.google.com" ||
+    event.data?.source !== "google-form-history"
+  ) {
     return;
   }
   const data = event.data.payload;
@@ -48,5 +52,5 @@ window.addEventListener("message", async (event) => {
   const localForms: Record<string, Form> = localFormsData ?? {};
   localForms[form.path] = form;
   chrome.storage.local.set({ forms: localForms });
-  console.log("[google-form-save] Form saved", form);
+  console.log("[google-form-history] Form saved", form);
 });

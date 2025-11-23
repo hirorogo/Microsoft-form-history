@@ -31,15 +31,19 @@ const saveAnswers = async () => {
   // 前ページまでの回答は partialResponse に存在
   const input = document.querySelector("[name='partialResponse']");
   if (input instanceof HTMLInputElement) {
-    const value = JSON.parse(input.value)[0];
-    if (value) {
-      for (const item of value) {
-        const id = item[1];
-        // 隠し input に存在する場合，重複を防ぐために処理しない
-        if (item && item.length === 4 && !hiddenInputIds.has(id)) {
-          addAnswer(id, item[2]);
+    try {
+      const value = JSON.parse(input.value)[0];
+      if (value) {
+        for (const item of value) {
+          const id = item[1];
+          // 隠し input に存在する場合，重複を防ぐために処理しない
+          if (item && item.length === 4 && !hiddenInputIds.has(id)) {
+            addAnswer(id, item[2]);
+          }
         }
       }
+    } catch (e) {
+      console.error("[google-form-history] Failed to parse partialResponse", e);
     }
   }
 
@@ -67,7 +71,7 @@ const saveAnswers = async () => {
   localAnswers[key] = formAnswers;
   chrome.storage.local.set({ answers: localAnswers });
 
-  console.log("[google-form-save] Answer saved", formAnswers);
+  console.log("[google-form-history] Answer saved", formAnswers);
 };
 
 // 回答を記録
