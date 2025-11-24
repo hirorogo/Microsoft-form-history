@@ -9,19 +9,42 @@ export interface Form {
 
 export interface Item {
   id: string;
-  answerId?: number;
   headline: string;
   label: string;
+  questions: Question[];
+}
+
+export interface Question {
+  answerId: number;
   options: string[];
 }
 
 // $formId-$fbzx をキーにした回答データ
 export type LocalAnswers = Record<string, FormAnswers>;
 
-// answerId をキーにした回答データ
 export interface FormAnswers {
   formId: string;
   fbzx: string;
   date: string;
-  answers: Record<string, string[]>;
+  answers: Answers;
 }
+
+// answerId をキーにした回答データ
+export type Answers = Record<string, Answer>;
+
+export type Answer =
+  | {
+      type: "text";
+      value: string[];
+    }
+  | {
+      type: "date";
+      year: number;
+      month: number;
+      day: number;
+    }
+  | {
+      type: "time";
+      hour: number;
+      minute: number;
+    };

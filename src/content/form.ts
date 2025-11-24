@@ -1,4 +1,4 @@
-import { Form, Item } from "@/utils/types";
+import { Form, Item, Question } from "@/utils/types";
 import { getFormId } from "@/utils/utils";
 
 // FB_PUBLIC_LOAD_DATA_ を取得するためにスクリプトを注入
@@ -26,16 +26,23 @@ window.addEventListener("message", async (event) => {
       id: item[0],
       headline: item[1],
       label: item[2],
-      options: [],
+      questions: [],
     };
-    // TODO: グリッドに対応
-    const detail = item[4]?.[0];
-    if (detail) {
-      if (detail[0]) {
-        tempItem.answerId = detail[0];
-      }
-      if (detail[1]) {
-        tempItem.options = detail[1].map((option: any) => option[0]);
+
+    const details = item[4];
+    if (details) {
+      for (const detail of details) {
+        const question: Question = {
+          answerId: 0,
+          options: [],
+        };
+        if (detail[0]) {
+          question.answerId = detail[0];
+        }
+        if (detail[1]) {
+          question.options = detail[1].map((option: any) => option[0]);
+        }
+        tempItem.questions.push(question);
       }
     }
     return tempItem;

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { LocalAnswers, LocalForms } from "@/utils/types";
 import "./App.css";
+import { answerToString, getLocalAnswerKey } from "@/utils/utils";
 
 // 回答ごとに表示するための整形済みデータ
 interface DisplayAnswer {
@@ -14,7 +15,7 @@ interface DisplayAnswer {
 interface DisplayItem {
   headline: string;
   label: string;
-  answers?: string[];
+  answer?: string;
 }
 
 const App = () => {
@@ -31,11 +32,23 @@ const App = () => {
     return dateObj.toLocaleDateString() + " " + dateObj.toLocaleTimeString();
   };
 
-  const deleteAnswer = (formId: string, fbzx: string) => {
-    /*chrome.storage.local.remove(["answers", formId, fbzx]);
-    setDisplayAnswers(
-      displayAnswers.filter((v) => v.formId !== formId || v.fbzx !== fbzx)
-    );*/
+  const deleteAnswer = async (formId: string, fbzx: string) => {
+    // ローカルから削除
+    const key = getLocalAnswerKey(formId, fbzx);
+    const localAnswers = (await chrome.storage.local.get("answers"))
+      .answers as LocalAnswers;
+    if (!localAnswers) {
+      return;
+    }
+    if (key in localAnswers) {
+      delete localAnswers[key];
+      await chrome.storage.local.set({ answers: localAnswers });
+    }
+
+    // 表示から削除
+    setDisplayAnswers((prev) =>
+      prev.filter((v) => !(v.formId === formId && v.fbzx === fbzx))
+    );
   };
 
   useEffect(() => {
@@ -51,31 +64,32 @@ const App = () => {
             return null;
           }
 
-          const items = form.items.map<DisplayItem>((item) => {
-            if (item.answerId && item.answerId in answers) {
+          const items = form.items.map<DisplayItem>(
+            ({ headline, label, questions }) => {
               return {
-                headline: item.headline,
-                label: item.label,
-                answers: answers[item.answerId],
-              };
-            } else {
-              return {
-                headline: item.headline,
-                label: item.label,
+                headline: headline,
+                label: label,
+                answer: questions
+                  .flatMap(({ answerId }) =>
+                    answers[answerId] ? answerToString(answers[answerId]) : []
+                  )
+                  .join("\n"),
               };
             }
-          });
+          );
 
           return {
             formId,
             fbzx,
-            date: date,
+            date,
             title: form.title,
             items,
           };
         })
         .filter((v): v is DisplayAnswer => v !== null)
-        .reverse(); // 新しい順に表示
+        .sort(
+          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+        );
 
       setDisplayAnswers(displayAnswers);
       setLoading(false);
@@ -83,11 +97,11 @@ const App = () => {
   }, []);
 
   if (loading) {
-    return <p>読み込み中...</p>;
+    return <div id="container">読み込み中……</div>;
   }
 
   if (displayAnswers.length === 0) {
-    return <p>保存された回答はありません</p>;
+    return <div id="container">保存された回答はありません</div>;
   }
 
   return (
@@ -95,7 +109,7 @@ const App = () => {
       <header id="header">
         <h1>保存された回答履歴</h1>
         <a onClick={deleteFormsAndAnswers} role="button">
-          回答履歴を削除
+          すべての回答履歴を削除
         </a>
       </header>
       <div id="forms">
@@ -105,11 +119,11 @@ const App = () => {
               {title}（{formatDate(date)}）
             </summary>
             <div className="qa-list">
-              {items.map(({ headline, label, answers }, i) => (
+              {items.map(({ headline, label, answer }, i) => (
                 <div key={i} className="qa-item">
                   <p className="question">{headline}</p>
                   {label && <p className="label">{label}</p>}
-                  {answers && <p className="answer">{answers.join("，")}</p>}
+                  {answer && <p className="answer">{answer}</p>}
                 </div>
               ))}
             </div>
@@ -126,7 +140,7 @@ const App = () => {
                 onClick={() => deleteAnswer(formId, fbzx)}
                 role="button"
               >
-                フォームを削除
+                回答履歴を削除
               </a>
             </footer>
           </details>

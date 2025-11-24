@@ -24,7 +24,7 @@ export default defineManifest({
   web_accessible_resources: [
     {
       resources: ["src/web-accessible-resources.js"],
-      matches: ["https://docs.google.com/forms/*"],
+      matches: ["https://docs.google.com/*"],
     },
   ],
 });
