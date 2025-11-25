@@ -7,11 +7,11 @@ export default defineManifest({
   version: pkg.version,
   description: "Microsoftフォームの回答履歴を保存・表示するChrome拡張機能",
   icons: {
-    48: "public/logo.png",
+    48: "logo.png",
   },
   action: {
     default_icon: {
-      48: "public/logo.png",
+      48: "logo.png",
     },
     default_popup: "src/popup/index.html",
   },
