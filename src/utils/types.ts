@@ -1,64 +1,75 @@
-// FB_PUBLIC_LOAD_DATA_ のデータ構造
-export type GoogleFormData = any[]; // トップレベルの配列は非常に複雑なため、any[]のままにする
-
-export interface GoogleFormPayload extends GoogleFormData {
-  1: [any, GoogleFormItemData[]];
-  // フォームのタイトル
-  3: string;
-  // フォームのパス
-  14: string;
+// Microsoftフォームのデータ構造
+export interface MicrosoftFormData {
+  id: string;
+  title: string;
+  description?: string;
+  questions: MicrosoftFormQuestion[];
+  settings?: any;
 }
 
-export type GoogleFormItemData = [
-  string, // id
-  string, // 見出し
-  string, // ラベル
-  any,
-  GoogleFormQuestionDetail[]
-];
+export interface MicrosoftFormQuestion {
+  id: string;
+  title: string;
+  subtitle?: string;
+  required: boolean;
+  type: QuestionType;
+  choices?: string[];
+  validations?: any;
+}
 
-export type GoogleFormQuestionDetail = [
-  number, // answerId
-  string[][] // 選択肢（例：[['選択肢1'], ['選択肢2']]）
-];
+export type QuestionType = 
+  | "text" 
+  | "paragraph" 
+  | "choice" 
+  | "multichoice" 
+  | "dropdown"
+  | "date"
+  | "time"
+  | "number"
+  | "email"
+  | "file";
 
-// formId をキーにしたフォームデータ
+// フォームIDをキーにしたフォームデータ
 export type LocalForms = Record<string, Form>;
 
 export interface Form {
   title: string;
-  path: string;
+  id: string;
+  description?: string;
   items: Item[];
+  submissionId?: string;
 }
 
 export interface Item {
   id: string;
-  headline: string;
-  label: string;
-  questions: Question[];
+  title: string;
+  subtitle?: string;
+  required: boolean;
+  type: QuestionType;
+  choices?: string[];
 }
 
-export interface Question {
-  answerId: number;
-  options: string[];
-}
-
-// $formId-$fbzx をキーにした回答データ
+// フォームID-回答IDをキーにした回答データ
 export type LocalAnswers = Record<string, FormAnswers>;
 
 export interface FormAnswers {
   formId: string;
-  fbzx: string;
+  submissionId: string;
   date: string;
   answers: Answers;
+  isSubmitted: boolean;
 }
 
-// answerId をキーにした回答データ
+// 質問IDをキーにした回答データ
 export type Answers = Record<string, Answer>;
 
 export type Answer =
   | {
       type: "text";
+      value: string;
+    }
+  | {
+      type: "choice";
       value: string[];
     }
   | {
@@ -71,4 +82,19 @@ export type Answer =
       type: "time";
       hour: number;
       minute: number;
+    }
+  | {
+      type: "number";
+      value: number;
+    }
+  | {
+      type: "file";
+      fileName: string;
     };
+
+// AI支援用の回答提案
+export interface AnswerSuggestion {
+  questionId: string;
+  suggestions: string[];
+  context?: string;
+}

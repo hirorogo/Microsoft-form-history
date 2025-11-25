@@ -3,8 +3,9 @@ import pkg from "./package.json";
 
 export default defineManifest({
   manifest_version: 3,
-  name: pkg.name,
+  name: "Microsoft Form History",
   version: pkg.version,
+  description: "Microsoftフォームの回答履歴を保存・表示するChrome拡張機能",
   icons: {
     48: "public/logo.png",
   },
@@ -14,17 +15,18 @@ export default defineManifest({
     },
     default_popup: "src/popup/index.html",
   },
-  permissions: ["storage"],
+  permissions: ["storage", "activeTab"],
   content_scripts: [
     {
       js: ["src/content/main.ts"],
-      matches: ["https://docs.google.com/forms/*"],
+      matches: ["https://forms.office.com/*", "https://forms.microsoft.com/*"],
+      run_at: "document_idle"
     },
   ],
   web_accessible_resources: [
     {
       resources: ["src/web-accessible-resources.js"],
-      matches: ["https://docs.google.com/*"],
+      matches: ["https://forms.office.com/*", "https://forms.microsoft.com/*"],
     },
   ],
 });
