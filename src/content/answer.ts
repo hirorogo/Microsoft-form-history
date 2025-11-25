@@ -19,7 +19,7 @@ const saveAnswers = async () => {
     const inputElements = document.querySelectorAll(
       'input[type="text"], input[type="email"], input[type="number"], input[type="date"], input[type="time"], ' +
       'input[type="radio"], input[type="checkbox"], ' +
-      'textarea, select'
+      'textarea, select, [contenteditable="true"], [role="textbox"]'
     );
 
     // 各入力要素から回答データを抽出
@@ -38,6 +38,14 @@ const saveAnswers = async () => {
     // 回答が空の場合は保存しない
     if (Object.keys(answers).length === 0) {
       return;
+    }
+
+    // 提出済み状態が変化していたら新しいsubmissionIdを生成
+    const previousSubmittedState = isSubmitted;
+    isSubmitted = isFormSubmitted();
+    if (isSubmitted && !previousSubmittedState) {
+      // 送信されたので、新しいsubmissionIdで保存
+      currentSubmissionId = generateSubmissionId();
     }
 
     // 回答データを作成

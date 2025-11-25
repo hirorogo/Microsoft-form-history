@@ -118,7 +118,21 @@ export const isFormSubmitted = (): boolean => {
     'ありがとう', '送信完了', '完了', '送信済み'
   ];
   
-  return submittedKeywords.some(keyword => title.includes(keyword));
+  if (submittedKeywords.some(keyword => title.includes(keyword))) {
+    return true;
+  }
+
+  // DOM内の可視テキストからも判定する（フォーム固有の送信完了メッセージに対応）
+  try {
+    const bodyText = (document.body && document.body.innerText) ? document.body.innerText.toLowerCase() : '';
+    if (submittedKeywords.some(keyword => bodyText.includes(keyword))) {
+      return true;
+    }
+  } catch (error) {
+    console.error('[microsoft-form-history] Failed to read DOM text for submission detection:', error);
+  }
+
+  return false;
 };
 
 /**
@@ -172,14 +186,14 @@ export const extractAnswerFromElement = (element: HTMLElement): { id: string; va
     
     // textarea要素の場合
     if (element instanceof HTMLTextAreaElement) {
-      const name = element.name || element.id;
+      const name = element.name || element.id || element.getAttribute('aria-label') || element.getAttribute('data-automation-id') || '';
       if (!name) return null;
       return { id: name, value: element.value };
     }
     
     // select要素の場合
     if (element instanceof HTMLSelectElement) {
-      const name = element.name || element.id;
+      const name = element.name || element.id || element.getAttribute('aria-label') || element.getAttribute('data-automation-id') || '';
       if (!name) return null;
       
       if (element.multiple) {
@@ -187,6 +201,18 @@ export const extractAnswerFromElement = (element: HTMLElement): { id: string; va
         return { id: name, value: values };
       } else {
         return { id: name, value: element.value };
+      }
+    }
+
+    // contenteditable または role="textbox" のケースに対応（Microsoft Forms の自由記述）
+    if (element instanceof HTMLElement) {
+      const isContentEditable = element.getAttribute('contenteditable') === 'true' || element.getAttribute('role') === 'textbox';
+      if (isContentEditable) {
+        // 適切な識別子を探す
+        const name = element.getAttribute('data-automation-id') || element.getAttribute('aria-label') || element.id || element.className || '';
+        if (!name) return null;
+        const text = (element.innerText || element.textContent || '').trim();
+        return { id: name, value: text };
       }
     }
     
