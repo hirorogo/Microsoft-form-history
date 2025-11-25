@@ -1,0 +1,113 @@
+name: Build Test
+
+on:
+  pull_request:
+    branches: [ main, master ]
+  push:
+    branches: [ main, master ]
+    paths-ignore:
+      - '*.md'
+      - 'docs/**'
+      - '.gitignore'
+      - 'LICENSE'
+
+jobs:
+  test-build:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: ['18.x', '20.x']
+        
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm install
+      
+    - name: Run TypeScript check
+      run: npx tsc --noEmit
+      
+    - name: Build extension
+      run: npm run build
+      
+    - name: Validate manifest.json
+      run: |
+        if [ ! -f "dist/manifest.json" ]; then
+          echo "Error: manifest.json not found in dist/"
+          exit 1
+        fi
+        echo "✅ manifest.json exists"
+        
+        # JSON形式の検証
+        if ! jq empty dist/manifest.json 2>/dev/null; then
+          echo "Error: manifest.json is not valid JSON"
+          cat dist/manifest.json
+          exit 1
+        fi
+        echo "✅ manifest.json is valid JSON"
+        
+        # 必須フィールドの検証
+        MANIFEST_VERSION=$(jq -r '.manifest_version' dist/manifest.json)
+        if [ "$MANIFEST_VERSION" != "3" ]; then
+          echo "Error: manifest_version should be 3, got $MANIFEST_VERSION"
+          exit 1
+        fi
+        echo "✅ manifest_version is correct"
+        
+        NAME=$(jq -r '.name' dist/manifest.json)
+        if [ "$NAME" != "Microsoft Form History" ]; then
+          echo "Error: name field is incorrect: $NAME"
+          exit 1
+        fi
+        echo "✅ name field is correct"
+        
+    - name: Check required files
+      run: |
+        echo "Checking required files in dist/..."
+        REQUIRED_FILES=(
+          "manifest.json"
+          "logo.png"
+          "src/popup/index.html"
+          "src/web-accessible-resources.js"
+        )
+        
+        for file in "${REQUIRED_FILES[@]}"; do
+          if [ ! -f "dist/$file" ]; then
+            echo "❌ Required file missing: $file"
+            exit 1
+          else
+            echo "✅ Found: $file"
+          fi
+        done
+        
+    - name: Check zip file creation
+      run: |
+        if [ ! -f "release/crx-microsoft-form-history-"*.zip ]; then
+          echo "Error: Zip file not created"
+          ls -la release/
+          exit 1
+        fi
+        echo "✅ Zip file created successfully"
+        
+        # ZIP内容の確認
+        ZIP_FILE=$(ls release/crx-microsoft-form-history-*.zip | head -1)
+        echo "Checking contents of $ZIP_FILE..."
+        unzip -l "$ZIP_FILE"
+        
+    - name: Archive build results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-results-node-${{ matrix.node-version }}
+        path: |
+          dist/
+          release/
+        retention-days: 7
